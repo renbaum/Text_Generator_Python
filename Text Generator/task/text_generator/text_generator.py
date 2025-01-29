@@ -1,5 +1,7 @@
 # Write your code here
 import re
+import random
+
 from nltk import ngrams
 import sys
 from os.path import expanduser
@@ -19,6 +21,9 @@ class Tails:
     def print_tails(self):
         for tail, count in self.tails.items():
             print(f"Tail: {tail}\tCount: {count}")
+
+    def get_most_probable_tail(self) -> str:
+        return max(self.tails, key=self.tails.get)
 
 
 
@@ -45,6 +50,23 @@ class Bigrams:
         self.bigrams[head].print_tails()
         print()
 
+    def get_sentence(self, head: str, n: int) -> list:
+        lst = []
+        if head not in self.bigrams:
+            return lst
+
+        lst.append(head)
+        for _ in range(n-1):
+            tail = self.bigrams[head].get_most_probable_tail()
+            lst.append(tail)
+            head = tail
+        return lst
+
+    def get_most_probable_tail(self, head: str) -> str:
+        if head not in self.bigrams:
+            return ""
+        return self.bigrams[head].get_most_probable_tail()
+
 filename = input()
 
 with open(filename, "r", encoding="utf-8") as file:
@@ -64,6 +86,13 @@ for grams in n_grams:
 #print(f"All tokens: {len(tokens)}")
 #print(f"Unique tokens: {len(set(tokens))}")
 
+head = random.choice(list(b.bigrams.keys()))
+for _ in range(10):
+    l = b.get_sentence(head, 10)
+    print(" ".join(l))
+    head = b.get_most_probable_tail(l[-1])
+
+'''
 while True:
     cmd = input()
     match cmd.lower():
@@ -78,3 +107,4 @@ while True:
                 print("Type Error. Please input an integer.")
             except IndexError:
                 print("Index Error. Please input an integer that is in the range of the corpus.")
+'''
