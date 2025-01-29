@@ -36,7 +36,10 @@ class Tails:
         return ""
 
 def is_end_of_sentence(word: str) -> bool:
-    return word[-1] in ".!?"
+    try:
+        return word[-1] in ".!?"
+    except IndexError:
+        return False
 
 class Bigrams:
     def __init__(self, bigram: tuple = None):
@@ -44,12 +47,14 @@ class Bigrams:
         if bigram is not None:
             self.add(bigram)
 
-    def add(self, bigram):
-        head, tail = bigram
-        if head not in self.bigrams:
-            self.bigrams[head] = Tails(tail)
+
+    def add(self, bigram: tuple):
+        head1, head2, tail = bigram
+        key = tuple([head1, head2])
+        if key not in self.bigrams:
+            self.bigrams[key] = Tails(tail)
         else:
-            self.bigrams[head].add(tail)
+            self.bigrams[key].add(tail)
 
     def print_bigrams(self, head: str):
         print(f"Head: {head}")
@@ -61,40 +66,43 @@ class Bigrams:
         self.bigrams[head].print_tails()
         print()
 
-    def get_sentence(self, head: str, n: int) -> list:
+    def get_sentence(self, head: tuple, n: int) -> list:
         lst = []
         if head not in self.bigrams:
-            return lst
+            head = self.get_random_head()
+#            return lst
 
-        lst.append(head)
-        cnt = 0
+        lst.extend(head)
+        cnt = 1
         while True:
 #        for i in range(n-1):
             tail = self.bigrams[head].get_most_probable_tail(cnt < 5)
             lst.append(tail)
-            head = tail
+            head = lst[-2], lst[-1]
+            if head not in self.bigrams:
+                break
             cnt += 1
             if is_end_of_sentence(tail):
                 break
         return lst
 
-    def get_most_probable_tail(self, head: str, not_end: bool) -> str:
+    def get_most_probable_tail(self, head: tuple, not_end: bool) -> str:
         if head not in self.bigrams:
             return ""
         return self.bigrams[head].get_most_probable_tail(not_end)
 
-    def get_random_head(self) -> str:
+    def get_random_head(self) -> list:
         while True:
-            str = random.choice(list(self.bigrams.keys()))
-            if not is_end_of_sentence(str) and re.match(r"[A-Z]", str):
-                return str
+            lst = random.choice(list(self.bigrams.keys()))
+            if not is_end_of_sentence(lst[0]) and re.match(r"[A-Z]", lst[0]):
+                return lst
 
 filename = input()
 
 with open(filename, "r", encoding="utf-8") as file:
     corpus = file.read()
 
-n = 2
+n = 3
 n_grams = ngrams(corpus.split(), n)
 #tokens = re.split(r"[\s ]", corpus)
 b = Bigrams()
@@ -112,7 +120,8 @@ head = b.get_random_head()
 for _ in range(10):
     l = b.get_sentence(head, 10)
     print(" ".join(l))
-    head = b.get_most_probable_tail(l[-1], True)
+    tail = b.get_most_probable_tail((l[-2], l[-1]), True)
+    head = head[1], tail
 
 '''
 while True:
