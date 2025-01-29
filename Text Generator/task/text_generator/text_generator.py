@@ -22,10 +22,21 @@ class Tails:
         for tail, count in self.tails.items():
             print(f"Tail: {tail}\tCount: {count}")
 
-    def get_most_probable_tail(self) -> str:
-        return max(self.tails, key=self.tails.get)
+    def get_keys_sorted_by_values(self) -> list:
+        return sorted(self.tails, key=self.tails.get, reverse=True)
+    
+    def get_most_probable_tail(self, not_end: bool) -> str:
+        sorted_keys = self.get_keys_sorted_by_values()
 
+        for tail in sorted_keys:
+            if is_end_of_sentence(tail) and not_end:
+                continue
+            return tail
 
+        return ""
+
+def is_end_of_sentence(word: str) -> bool:
+    return word[-1] in ".!?"
 
 class Bigrams:
     def __init__(self, bigram: tuple = None):
@@ -56,16 +67,27 @@ class Bigrams:
             return lst
 
         lst.append(head)
-        for _ in range(n-1):
-            tail = self.bigrams[head].get_most_probable_tail()
+        cnt = 0
+        while True:
+#        for i in range(n-1):
+            tail = self.bigrams[head].get_most_probable_tail(cnt < 5)
             lst.append(tail)
             head = tail
+            cnt += 1
+            if is_end_of_sentence(tail):
+                break
         return lst
 
-    def get_most_probable_tail(self, head: str) -> str:
+    def get_most_probable_tail(self, head: str, not_end: bool) -> str:
         if head not in self.bigrams:
             return ""
-        return self.bigrams[head].get_most_probable_tail()
+        return self.bigrams[head].get_most_probable_tail(not_end)
+
+    def get_random_head(self) -> str:
+        while True:
+            str = random.choice(list(self.bigrams.keys()))
+            if not is_end_of_sentence(str) and re.match(r"[A-Z]", str):
+                return str
 
 filename = input()
 
@@ -86,11 +108,11 @@ for grams in n_grams:
 #print(f"All tokens: {len(tokens)}")
 #print(f"Unique tokens: {len(set(tokens))}")
 
-head = random.choice(list(b.bigrams.keys()))
+head = b.get_random_head()
 for _ in range(10):
     l = b.get_sentence(head, 10)
     print(" ".join(l))
-    head = b.get_most_probable_tail(l[-1])
+    head = b.get_most_probable_tail(l[-1], True)
 
 '''
 while True:
